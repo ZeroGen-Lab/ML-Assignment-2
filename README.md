@@ -99,14 +99,20 @@ tensor       存储、形状、梯度、计算图节点 Node           （已给
 ## 数据（可选）
 
 评分不用数据集；数据只用来在本机真正训练三个模型。
-数据不在仓库里（单个文件超过 GitHub 限制），请到本仓库的 Releases 页面下载 `tinydl-data-v1.zip`（225 MB），
-放在作业目录下（含 `src/` 的那一层）解压，得到 `data/` 目录：
+数据不在仓库里（文件太大），压缩包 `tinydl-data-v1.zip`（225 MB）拆成了 5 个分卷，
+请到本仓库的 [Releases](https://github.com/ZeroGen-Lab/ML-Assignment-2/releases) 页面下载全部 5 个文件
+`tinydl-data-v1.zip.part-aa` 到 `tinydl-data-v1.zip.part-ae`（某个下载中断时只需重下那一个），
+放在作业目录下（含 `src/` 的那一层），合并、校验、解压，得到 `data/` 目录：
 
 ```
-shasum -a 256 tinydl-data-v1.zip   # Windows: certutil -hashfile tinydl-data-v1.zip SHA256
+cat tinydl-data-v1.zip.part-* > tinydl-data-v1.zip
+shasum -a 256 tinydl-data-v1.zip   # Linux / WSL 用 sha256sum
 # 应为 9295c3353f5267ef1410fc82250752fdfe570c6a75706f2e062e4073d2c098fe
 unzip tinydl-data-v1.zip
+rm tinydl-data-v1.zip tinydl-data-v1.zip.part-*   # 解压后可以删掉
 ```
+
+校验值不一致说明某个分卷没下完整，重新下载后再合并。
 
 `data/` 里是 Fashion-MNIST、CIFAR-10、UCI HAR 三个公开数据集的训练集和测试集；
 来源和许可见 `data/DATA-SOURCES.md`。`data/` 已写进 `.gitignore`，不要提交。
