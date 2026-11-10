@@ -178,6 +178,10 @@ def main():
         else:
             used, limit = st["used"], st["limit"]
             print(f"\n学号 {args.id}（榜单显示为 {st['public_id']} {st['nickname']}）")
+            best = next((i for i in st["items"] if i.get("best")), None)
+            if best:
+                print(f"目前榜单采用 #{best['id']}：{best['band']}，最大误差 {err(best['max_err'])}，"
+                      f"误差中位数 {err(best['median_err'])}（榜单取误差最小的一次，再交不会变差）")
             if used >= limit:
                 sys.exit(f"{limit} 次提交机会已经用完。")
         which = f"第 {used + 1} 次" + (f"（共 {limit} 次）" if limit else "（共 3 次）")
