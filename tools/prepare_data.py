@@ -106,13 +106,33 @@ def har(raw: Path, out: Path) -> None:
         write_bin(out / f"har_{split}_y.bin", (n,), 1, bytes(labels))
 
 
+NEEDS = {
+    "fashion": [f"fashion-{s}-{k}-ubyte.gz" for s in ("train", "t10k") for k in ("images-idx3", "labels-idx1")],
+    "cifar": ["cifar-10-binary.tar.gz"],
+    "har": ["uci-har.zip"],
+}
+
+
 def main() -> None:
+    if len(sys.argv) < 3:
+        sys.exit(__doc__)
     raw, out = Path(sys.argv[1]).resolve(), Path(sys.argv[2]).resolve()
-    out.mkdir(parents=True, exist_ok=True)
-    only = sys.argv[3:] or ["fashion", "cifar", "har"]
+    only = sys.argv[3:] or list(NEEDS)
+    unknown = [n for n in only if n not in NEEDS]
+    if unknown:
+        sys.exit(f"未知的数据集：{'、'.join(unknown)}（可选 {'、'.join(NEEDS)}）")
+    done = 0
     for name in only:
+        missing = [f for f in NEEDS[name] if not (raw / f).is_file()]
+        if missing:
+            print(f"跳过 {name}：{raw} 里缺少 {'、'.join(missing)}（文件名见 README「数据」一节）")
+            continue
+        out.mkdir(parents=True, exist_ok=True)
         print(name)
         {"fashion": fashion, "cifar": cifar, "har": har}[name](raw, out)
+        done += 1
+    if not done:
+        sys.exit("没有转换任何数据集。")
 
 
 if __name__ == "__main__":

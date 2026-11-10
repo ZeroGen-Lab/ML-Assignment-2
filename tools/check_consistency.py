@@ -136,7 +136,7 @@ def main():
         s = summarize(errs)
         print(f"{model.upper():5} 最大误差 {fmt(s['max'])}  中位数 {fmt(s['median'])}  {s['band']}")
     s = summarize(every)
-    print(f"总计：最大误差 {fmt(s['max'])}，中位数 {fmt(s['median'])}，{s['band']}")
+    print(f"总计（公开种子，不计分）：最大误差 {fmt(s['max'])}，中位数 {fmt(s['median'])}，{s['band']}")
     sys.exit(0 if s["band"] in BANDS[:2] else 1)
 
 

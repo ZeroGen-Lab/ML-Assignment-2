@@ -102,7 +102,7 @@ tensor       存储、形状、梯度、计算图节点 Node           （已给
 python3 tools/prepare_data.py raw data
 ```
 
-`data/` 已写进 `.gitignore`，不要提交。
+缺哪个数据集的文件就跳过哪个，只想训练一个模型时只准备它的数据即可。`data/` 已写进 `.gitignore`，不要提交。
 
 ## 编译和自测
 

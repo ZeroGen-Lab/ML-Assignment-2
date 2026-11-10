@@ -12,7 +12,7 @@ namespace tdl {
 
 Array load_array(const std::string& path) {
     std::ifstream f(path, std::ios::binary);
-    if (!f) throw std::runtime_error("cannot open " + path + " (run the data preparation step first)");
+    if (!f) throw std::runtime_error("cannot open " + path + " (optional: download the datasets and run python3 tools/prepare_data.py raw data, see README)");
     char magic[4];
     int32_t ndim = 0;
     f.read(magic, 4);
