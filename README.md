@@ -1,6 +1,6 @@
 # ML Assignment 2 · C++ Tiny Deep Learning Framework
 
-[排行榜](https://coideas.me/ml-assignment-2/) · [课程仓库](https://github.com/ZeroGen-Lab/ML-Assignment-2) · [数据下载（Releases）](https://github.com/ZeroGen-Lab/ML-Assignment-2/releases)
+[排行榜](https://coideas.me/ml-assignment-2/) · [课程仓库](https://github.com/ZeroGen-Lab/ML-Assignment-2)
 
 用 C++17（只用标准库）实现一个小型深度学习框架，并用它训练 MLP、CNN、LSTM 三个模型。
 
@@ -9,7 +9,8 @@
 写完后，三个模型的训练（包括 LSTM 沿 128 个时间步的反向传播）全部由你的 autograd 自动完成，
 不需要为任何模型手写梯度。
 
-满分 100 分，占课程总评的 35%。**提交截止：2026 年 12 月 3 日 23:59:59（北京时间）。**
+占课程总评的 35%，按误差排名定分（见[评分](#评分)）。每人共 **3 次**提交机会。
+**提交截止：2026 年 12 月 3 日 23:59:59（北京时间）。**
 
 ## 快速开始
 
@@ -23,8 +24,8 @@ make test       # 刚开始只有示例 ops/add 通过（1/30），其余报 TOD
 不使用 Git 时，打开[课程仓库](https://github.com/ZeroGen-Lab/ML-Assignment-2)，点击 **Code → Download ZIP**，解压后进入目录。
 之后的所有命令都在这个目录（含 `src/` 的那一层）里执行。
 
-然后按[建议顺序](#建议顺序)逐个实现，用 `make test`、`make check` 在本机自测，
-满意后用 `python3 tools/submit.py submit --id 你的学号` 提交（见[提交](#提交)）。
+然后按[建议顺序](#建议顺序)逐个实现，用 `make test`、`make check` 在本机自测。
+提交机会只有 3 次，请在本机确认 `make check` 的误差已经足够小，再用 `python3 tools/submit.py submit --id 你的学号` 提交（见[提交](#提交)）。
 
 ## 学习目标
 
@@ -96,28 +97,18 @@ tensor       存储、形状、梯度、计算图节点 Node           （已给
 | CNN | 0.588 | 38 秒 |
 | LSTM | 0.886 | 34 秒 |
 
-## 数据（可选）
+## 数据
 
-评分不用数据集；数据只用来在本机真正训练三个模型。
-数据不在仓库里（文件太大），压缩包 `tinydl-data-v1.zip`（225 MB）拆成了 5 个分卷，
-请到本仓库的 [Releases](https://github.com/ZeroGen-Lab/ML-Assignment-2/releases) 页面下载全部 5 个文件
-`tinydl-data-v1.zip.part-aa` 到 `tinydl-data-v1.zip.part-ae`（某个下载中断时只需重下那一个），
-放在作业目录下（含 `src/` 的那一层），合并、校验、解压，得到 `data/` 目录：
+**做作业和评分都不需要下载数据集。** 一致性检查的输入是用固定随机种子生成的，形状如下：
 
-```
-cat tinydl-data-v1.zip.part-* > tinydl-data-v1.zip
-shasum -a 256 tinydl-data-v1.zip   # Linux / WSL 用 sha256sum
-# 应为 9295c3353f5267ef1410fc82250752fdfe570c6a75706f2e062e4073d2c098fe
-unzip tinydl-data-v1.zip
-rm tinydl-data-v1.zip tinydl-data-v1.zip.part-*   # 解压后可以删掉
-```
+| 模型 | 一次检查的输入 | 输出类别 |
+| --- | --- | --- |
+| MLP | 8 个样本，每个 784 个数（28×28） | 10 |
+| CNN | 4 个样本，每个 3×32×32 | 10 |
+| LSTM | 8 个样本，每个 16 个时间步、每步 9 个数 | 6 |
 
-校验值不一致说明某个分卷没下完整，重新下载后再合并。
-
-`data/` 里是 Fashion-MNIST、CIFAR-10、UCI HAR 三个公开数据集的训练集和测试集；
-来源和许可见 `data/DATA-SOURCES.md`。`data/` 已写进 `.gitignore`，不要提交。
-
-无法从 Releases 下载时，从各数据集官方地址下载原始数据，放进一个目录（如 `raw/`）并按下面的名字命名，再转换：
+（可选）想用真实数据完整训练三个模型、看看准确率，可以从各数据集官方地址下载原始数据，
+放进一个目录（如 `raw/`）并按下面的名字命名，再转换成 `data/`：
 
 - Fashion-MNIST 四个文件 `train-images-idx3-ubyte.gz` 等，改名为 `fashion-train-images-idx3-ubyte.gz`、`fashion-train-labels-idx1-ubyte.gz`、`fashion-t10k-images-idx3-ubyte.gz`、`fashion-t10k-labels-idx1-ubyte.gz`
 - CIFAR-10 的二进制版本 `cifar-10-binary.tar.gz`
@@ -126,6 +117,8 @@ rm tinydl-data-v1.zip tinydl-data-v1.zip.part-*   # 解压后可以删掉
 ```
 python3 tools/prepare_data.py raw data
 ```
+
+`data/` 已写进 `.gitignore`，不要提交。
 
 ## 编译和自测
 
@@ -138,9 +131,9 @@ make check      # 固定种子一致性检查（公开种子）
 ./build/gradcheck ops          # 只跑一组：ops / autograd / nn / optim
 ./build/gradcheck matmul       # 只跑一项
 ./build/consistency mlp 1      # 打印一次一致性检查的原始输出（mlp / cnn / lstm，种子）
-./build/train_mlp  --data data # 训练 MLP（Fashion-MNIST）
-./build/train_cnn  --data data # 训练 CNN（CIFAR-10）
-./build/train_lstm --data data # 训练 LSTM（UCI HAR）
+./build/train_mlp  --data data # 可选：用真实数据训练 MLP（需要先准备 data/，见上）
+./build/train_cnn  --data data # 可选：训练 CNN
+./build/train_lstm --data data # 可选：训练 LSTM
 ```
 
 训练程序可加 `--epochs N`（训练轮数）、`--limit N`（只用前 N 个训练样本）、`--seed N`（随机种子），
@@ -150,61 +143,72 @@ make check      # 固定种子一致性检查（公开种子）
 
 1. `mul`、`relu`、`sigmoid`、`tanh`：`./build/gradcheck ops` 逐个通过。
 2. `Tensor::backward()`：`./build/gradcheck autograd`。
-3. `matmul`、`add_bias`、`reshape`、`cross_entropy`，`Linear::forward`，`zero_grad`、`SGD` → `make check` 里 mlp 通过。
-4. `conv2d`、`max_pool2d`，`Conv2d::forward`、`MaxPool2d::forward` → cnn 通过。
-5. `slice_cols`、`LSTMCell::forward` → lstm 通过。
+3. `matmul`、`add_bias`、`reshape`、`cross_entropy`，`Linear::forward`，`zero_grad`、`SGD` → `make check` 里 MLP 达到“完全正确”。
+4. `conv2d`、`max_pool2d`，`Conv2d::forward`、`MaxPool2d::forward` → CNN 达到“完全正确”。
+5. `slice_cols`、`LSTMCell::forward` → LSTM 达到“完全正确”。
 
 每一步先让对应的梯度检查通过，再看一致性检查。梯度检查失败时打印 `FAIL 组/测试名: input k elem i: analytic … numeric …`，指出哪个输入的哪个元素梯度不对。
 
 ## 评分
 
-总分 100，不看训练准确率，也不计训练速度：
+只看固定种子一致性检查的**误差**，不看训练准确率，也不计训练速度。
 
-- **梯度检查与单元测试 50 分**：`make test` 的 30 个公开测试，加上评测服务器上的隐藏测试（覆盖同样的函数，换不同的形状和数值，并包含更深的计算图），
-  按全部测试的通过比例给分。
-- **固定种子一致性检查 50 分**（MLP、CNN、LSTM 各三分之一）：用固定种子初始化网络，喂随机生成的小批量输入
-  （MLP、LSTM batch 8，CNN batch 4，LSTM 序列长 16），连续做 5 步 forward / backward / SGD，
-  和正确实现的结果比较三部分：第 1 步的 loss（forward）、第 1 步后每个参数的梯度（backward）、之后各步的 loss 和最终参数（training）。
-  每个数值的允许误差为 `|你的值 − 参考值| ≤ 1e-3 × |参考值| + 1e-3 × scale`，loss 的 scale 为 1，张量的 scale 为参考张量的均方根；
-  这个容差远大于求和顺序、编译选项带来的浮点差异，实现正确就不会失分。
-  评测服务器运行公开种子和另一批不公开的种子，按通过的部分数给分；本机 `make check` 用公开种子，检查方法完全相同。
+- **怎么检查**：3 个模型（MLP、CNN、LSTM）各用 6 组固定随机种子，其中种子 1、2 公开（本机 `make check` 就是它们），另外 4 组只在评测服务器上运行。
+  每组用种子生成网络初始权重和一批随机输入，连续做 5 步 forward / backward / SGD（momentum），
+  和参考实现比较：每一步的 loss、第 1 步后每个参数的梯度、最后一步后的参数。
+- **相对误差**：每个比较的数算 `|你的值 − 参考值| ÷ 尺度`，loss 的尺度是参考值的绝对值，梯度和参数的尺度是参考张量的均方根（避免接近 0 的元素把误差放大）。
+  某组运行崩溃、超时或输出的形状不对，这组的误差记为无穷大（显示为“—”）。
+- **结果**：取所有比较值的**最大误差**和**误差中位数**。
 
-梯度检查和一致性检查分开计分：只完成了部分算子，也能拿到对应的分数。
+| 结果 | 条件 | 含义 |
+| --- | --- | --- |
+| 完全正确 | 中位数 ≤ 1e-6 且最大误差 ≤ 1e-5 | 实现正确，只剩浮点求和顺序带来的差别 |
+| 大体正确 | 最大误差 ≤ 1e-3 | 基本正确，但某处数值精度处理不好 |
+| 有错误 | 最大误差 > 1e-3 | 有算错的地方 |
+| 未完成 | 有运行没给出可用结果 | 有函数没实现、崩溃或超时 |
+
+- **排名**：先比最大误差，再比误差中位数，都是越小越靠前；再相同时提交早的在前。
+  榜单采用你截止前误差最小的一次提交，课程成绩在截止后根据排行榜确定。
+- 梯度检查和单元测试（`make test` 及服务器上的隐藏测试）不计分，评测时照常运行并显示通过数，帮你定位错误。
 
 ## 提交
 
 在作业目录下（含 `src/` 的那一层）运行，只上传 `src/` 里的四个文件：
 
 ```
-python3 tools/submit.py submit --id 你的学号                   # 提交并排队评测
+python3 tools/submit.py submit --id 你的学号                   # 提交
 python3 tools/submit.py submit --id 你的学号 --nickname 昵称   # 提交，同时设置排行榜昵称
-python3 tools/submit.py status --id 你的学号                   # 查看排队位置和最近一次的成绩
-python3 tools/submit.py status --id 你的学号 -n 5              # 查看最近 5 次
+python3 tools/submit.py status --id 你的学号                   # 查看已用次数、排队位置和结果
 ```
 
-第一次提交时自动登记学号，请务必填对（4 到 32 位字母或数字，成绩按学号记）。
-学号打错会登记成另一个学号，成绩也记在那个学号下，自己无法修改；发现填错请立即联系助教，并改掉保存了错误学号的地方（脚本、命令历史、环境变量等）。
+**每人共 3 次提交机会**，请对自己提交的代码负责：在本机把 `make test`、`make check` 调好再提交。
+`submit` 上传前会：
+
+1. 在本机编译并运行公开种子的一致性检查（和 `make check` 相同），显示结果；本机编译失败就不上传；
+2. 显示学号和“这次将用掉第几次机会”，输入 `yes` 才上传；
+3. 学号第一次登记时，要求再输入一遍学号确认。成绩按学号记，登记后不能自己修改，请务必填对；
+   发现填错请立即联系助教，并改掉保存了错误学号的地方（脚本、命令历史、环境变量等）。
+
+以下情况**不计次数**：
+
+- 服务器上代码检查不通过，或编译、链接失败（不出结果，改好后再交）；
+- 上传的代码和你之前的某次提交完全相同（例如网络中断后重试），服务器直接指向那次提交；
+- 排队中又提交了新版本：排队中的旧提交被替换；
+- 评测系统故障；
+- 截止后、次数用完后或因网络问题没有显示“已受理”的上传。
+
 排行榜只显示分配的编号（如 `S0001`）和昵称，不显示学号；昵称默认“匿名同学”，最多 20 字，每次提交都可以改。
+`status` 显示每次提交的结果、三个模型各自的误差、公开种子的误差，以及测试通过数（仅供参考）。
 
-`status` 显示：代码检查和编译结果、公开测试和隐藏测试的通过数（隐藏测试按 ops / autograd / nn / optim 分组给出）、
-未通过的公开测试名、三个模型一致性检查各部分的通过数和未通过的公开种子、各项得分和总分。
-
-排队与次数：
-
-- 每人每天最多 20 次评测，北京时间 0 点重置。
-- 排队按当天已开始评测的次数轮转，次数少的先评测。
-- 排队中再次提交，会替换排队中的旧提交；被替换的提交和评测系统故障不计次数。
-- 截止时间 **2026-12-03 23:59:59（北京时间）**，以上传时间为准；截止前上传、仍在排队的提交照常评测。
-- 课程成绩取截止前得分最高的一次提交。排行榜按总分排名，同分时提交早的在前。
-
-排行榜：https://coideas.me/ml-assignment-2/ 。平时请先用 `make test` 和 `make check` 在本机调试。
+截止时间 **2026-12-03 23:59:59（北京时间）**，以上传时间为准；截止前上传、仍在排队的提交照常评测。
+排行榜：https://coideas.me/ml-assignment-2/
 
 ## 规则
 
 - 只用 C++17 标准库，编译选项 `-O3 -march=native -std=c++17`（评测服务器为 x86-64，支持 AVX-512），单线程。
-- 时限：每个测试、每次一致性运行各 5 秒，每份提交总共 60 秒（含编译），超时的项记为不通过。
+- 时限：每次一致性运行、每个测试各 5 秒，每份提交总共 180 秒（含编译，先跑一致性检查）；超时的运行误差记为无穷大。
   每次运行内存上限 2 GB。
-- 评测前会检查源码：`#include` 只允许常用标准头文件和 `tinydl/*.hpp`，而且要直接写头文件名；不得使用输出、文件、环境变量、进程、线程、内联汇编等（如 `printf`、`cout`、`fopen`、`getenv`、`system`、`exit`、`thread`、`asm`、`extern`、`remove`、`rename`、`__attribute__`），也不得使用 `#pragma`、`##`、反斜杠续行、原始字符串 `R"..."` 和 `%:`。编译后还会检查目标文件引用的外部函数，只允许标准库本身需要的那些。检查不通过记 0 分。
+- 评测前会检查源码：`#include` 只允许常用标准头文件和 `tinydl/*.hpp`，而且要直接写头文件名；不得使用输出、文件、环境变量、进程、线程、内联汇编等（如 `printf`、`cout`、`fopen`、`getenv`、`system`、`exit`、`thread`、`asm`、`extern`、`remove`、`rename`、`__attribute__`），也不得使用 `#pragma`、`##`、反斜杠续行、原始字符串 `R"..."` 和 `%:`。编译后还会检查目标文件引用的外部函数，只允许标准库本身需要的那些。检查不通过的提交不出结果，也不计次数。
 - 程序不得读写评测所需以外的文件、不得联网。
 
 ## 常见问题
@@ -215,18 +219,19 @@ python3 tools/submit.py status --id 你的学号 -n 5              # 查看最�
 **我用 Windows。**
 请在 WSL（Ubuntu）里做作业，在 WSL 里安装 `g++`、`make`、`python3` 后按上面的命令操作。
 
-**本机 `make test`、`make check` 都通过了，服务器上却有失败。**
+**本机 `make check` 误差很小，服务器上误差却变大了。**
 先用 `status` 看具体原因：
-- 代码检查未通过：用到了[规则](#规则)里不允许的头文件或函数；
-- 隐藏测试失败：多半是只在公开形状上碰巧正确，检查广播、非方阵、batch 为 1、步长和边界等情况；
+- 代码检查未通过：用到了[规则](#规则)里不允许的头文件或函数（不计次数）；
+- 隐藏种子误差大或隐藏测试失败：多半是只在公开种子上碰巧正确，检查广播、非方阵、batch 为 1、步长和边界等情况；
 - 超时：检查 `Tensor::backward()` 是否有重复遍历或平方级的查找（LSTM 的计算图有十几万个节点）；
 - 结果不稳定：检查未初始化的变量和数组越界，服务器用 `-O3 -march=native` 编译，这类错误更容易暴露。
 
 **提交时提示网络错误或“评测服务器暂时不可用”。**
-稍等再试；用了代理或校外网络时，可以换个网络。提示“请求太频繁”时等一分钟再试。没有显示“已受理”的上传不计次数，评测系统故障也不计次数。
+稍等再试；用了代理或校外网络时，可以换个网络。提示“请求太频繁”时等一分钟再试。
+不确定刚才是否已上传成功时，先用 `status` 查看；直接再提交同样的代码也不会重复计次。
 
 **提交后多久出结果？**
-`submit` 会显示排队位置和预计时间，用 `status` 查询结果。截止前提交的人多，请尽早提交，不要等到最后一天。
+一般一分钟以内。`submit` 会显示排队位置和预计时间，用 `status` 查询结果。截止前提交的人多，请尽早提交，不要等到最后一天。
 
 **遇到其他问题。**
 向课程助教提供提交编号、`status` 的输出和简要复现步骤；不要在公开场合贴出自己的完整代码。
