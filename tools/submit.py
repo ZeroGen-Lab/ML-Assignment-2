@@ -90,7 +90,7 @@ def show(item):
     if e:
         print(f"  结果（隐藏种子，计分）：{e['band']}，最大误差 {err(e['max'])}，误差中位数 {err(e['median'])}")
     for key, m in (rep.get("models") or {}).items():
-        print(f"  {key.upper():5} 最大误差 {err(m.get('max'))}  中位数 {err(m.get('median'))}  {m.get('band')}")
+        print(f"  {key.upper():5}（隐藏种子）最大误差 {err(m.get('max'))}  中位数 {err(m.get('median'))}  {m.get('band')}")
         for run in m.get("public") or []:
             print(f"    公开 seed {run['seed']}（不计分）: 最大误差 {err(run['max'])}  中位数 {err(run['median'])}"
                   + (f"  （{run['error']}）" if run.get("error") else ""))
