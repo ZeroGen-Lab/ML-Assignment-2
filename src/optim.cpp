@@ -16,6 +16,7 @@ SGD::SGD(std::vector<Tensor> params, float lr, float momentum)
 }
 
 void SGD::step() {
+    (void)lr_, (void)momentum_;  // silences "unused field" until you use them; delete this line
     todo("SGD::step");  // TODO: implement
 }
 
