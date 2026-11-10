@@ -43,29 +43,37 @@ def _rel(g, r, scale):
     return abs(g - r) / scale if _number(g) else math.inf
 
 
-def _tensor_errors(got, ref):
+def _tensor_errors(got, ref, what):
     errors = []
     for name, r in ref.items():
         g = (got or {}).get(name) if isinstance(got, dict) else None
         rms = r["norm"] / math.sqrt(max(1, r["n"])) or 1e-30
-        count = 1 + len(r["at"])
+        labels = [f"{what} {name}（范数）"] + [f"{what} {name}（第 {k + 1} 个抽样元素）" for k in range(len(r["at"]))]
         if not (isinstance(g, dict) and g.get("n") == r["n"] and isinstance(g.get("at"), list)
                 and len(g["at"]) == len(r["at"])):
-            errors += [math.inf] * count
+            errors += [(label, math.inf) for label in labels]
             continue
-        errors.append(_rel(g.get("norm"), r["norm"], max(abs(r["norm"]), 1e-30)))
-        errors += [_rel(x, y, rms) for x, y in zip(g["at"], r["at"])]
+        values = [_rel(g.get("norm"), r["norm"], max(abs(r["norm"]), 1e-30))]
+        values += [_rel(x, y, rms) for x, y in zip(g["at"], r["at"])]
+        errors += list(zip(labels, values))
     return errors
+
+
+def labeled_errors(got, ref):
+    """(what was compared, relative error) for every compared number of one run."""
+    steps = len(ref["loss"])
+    loss = got.get("loss") if isinstance(got, dict) and isinstance(got.get("loss"), list) else []
+    loss = loss[:steps] + [None] * (steps - len(loss))
+    out = [(f"第 {i + 1} 步的 loss", _rel(g, r, max(abs(r), 1e-30)))
+           for i, (g, r) in enumerate(zip(loss, ref["loss"]))]
+    out += _tensor_errors(got.get("grad") if isinstance(got, dict) else None, ref["grad"], "第 1 步后的梯度")
+    out += _tensor_errors(got.get("param") if isinstance(got, dict) else None, ref["param"], f"第 {steps} 步后的参数")
+    return out
 
 
 def errors(got, ref):
     """Relative error of every compared number of one run (inf where unusable)."""
-    loss = got.get("loss") if isinstance(got, dict) and isinstance(got.get("loss"), list) else []
-    loss = loss[:len(ref["loss"])] + [None] * (len(ref["loss"]) - len(loss))
-    out = [_rel(g, r, max(abs(r), 1e-30)) for g, r in zip(loss, ref["loss"])]
-    out += _tensor_errors(got.get("grad") if isinstance(got, dict) else None, ref["grad"])
-    out += _tensor_errors(got.get("param") if isinstance(got, dict) else None, ref["param"])
-    return out
+    return [e for _, e in labeled_errors(got, ref)]
 
 
 def summarize(errs):
@@ -113,12 +121,16 @@ def main():
                 err = (p.stderr.strip().splitlines() or [f"退出码 {p.returncode}"])[-1]
         except subprocess.TimeoutExpired:
             got, err = None, f"超时（超过 {TIMEOUT} 秒）"
-        errs = errors(got, ref)
+        labeled = labeled_errors(got, ref)
+        errs = [e for _, e in labeled]
         every += errs
         per_model.setdefault(ref["model"], []).extend(errs)
         s = summarize(errs)
         print(f"{ref['model']:4s} seed {ref['seed']}: 最大误差 {fmt(s['max'])}  中位数 {fmt(s['median'])}  {s['band']}"
               + (f"  （{err}）" if err else ""))
+        if got is not None and s["band"] != BANDS[0]:
+            where, worst = max(labeled, key=lambda item: item[1])
+            print(f"    误差最大的一项：{where}，相对误差 {fmt(worst if math.isfinite(worst) else None)}")
     for model, errs in per_model.items():
         s = summarize(errs)
         print(f"{model.upper():5} 最大误差 {fmt(s['max'])}  中位数 {fmt(s['median'])}  {s['band']}")
