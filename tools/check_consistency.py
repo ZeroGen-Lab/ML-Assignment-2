@@ -21,7 +21,8 @@ Results are the maximum and the median of these errors:
     有错误    max >  1e-3
     未完成    a run gave no usable output
 
-The grading server runs the same comparison with more (unpublished) seeds.
+Grading uses only the unpublished seeds on the server; the public seeds here
+are for checking your own work and do not count.
 """
 import json
 import math
