@@ -89,14 +89,6 @@ tensor       存储、形状、梯度、计算图节点 Node           （已给
 | CNN | CIFAR-10 | Conv(3→16, 3×3) → ReLU → MaxPool → Conv(16→32, 3×3) → ReLU → MaxPool → Linear(2048→128) → ReLU → Linear(128→10) | 训练集前 20000 张，2 epoch，batch 32，lr 0.01，momentum 0.9 |
 | LSTM | UCI HAR | LSTMCell(9→64) 展开 128 步，最后的隐藏状态 → Linear(64→6) | 4 epoch，batch 32，lr 0.1，momentum 0.9，梯度裁剪到范数 5 |
 
-正确实现在一台 Mac 笔记本上（单线程）用默认设置训练的结果，供自查，不计分：
-
-| 模型 | 测试准确率 | 训练耗时 |
-| --- | --- | --- |
-| MLP | 0.864 | 7 秒 |
-| CNN | 0.588 | 38 秒 |
-| LSTM | 0.886 | 34 秒 |
-
 ## 数据
 
 **做作业和评分都不需要下载数据集。** 一致性检查的输入是用固定随机种子生成的，形状如下：
