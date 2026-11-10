@@ -6,8 +6,7 @@
 
 这是一份填空式作业：张量、模型结构、数据加载、训练循环都已写好，你负责框架的核心——
 各算子的前向和反向传播、自动求导引擎、网络层和优化器。
-写完后，三个模型的训练（包括 LSTM 沿 128 个时间步的反向传播）全部由你的 autograd 自动完成，
-不需要为任何模型手写梯度。
+三个模型的梯度（包括 LSTM 沿 128 个时间步的反向传播）都由你的 autograd 自动求出，不为单个模型手写梯度。
 
 占课程总评的 35%，按误差排名定分（见[评分](#评分)）。每人共 **3 次**提交机会。
 **提交截止：2026 年 12 月 3 日 23:59:59（北京时间）。**
@@ -24,8 +23,8 @@ make test       # 刚开始只有示例 ops/add 通过（1/30），其余报 TOD
 不使用 Git 时，打开[课程仓库](https://github.com/ZeroGen-Lab/ML-Assignment-2)，点击 **Code → Download ZIP**，解压后进入目录。
 之后的所有命令都在这个目录（含 `src/` 的那一层）里执行。
 
-然后按[建议顺序](#建议顺序)逐个实现，用 `make test`、`make check` 在本机自测。
-提交机会只有 3 次，请在本机确认 `make check` 的误差已经足够小，再用 `python3 tools/submit.py submit --id 你的学号` 提交（见[提交](#提交)）。
+然后按[建议顺序](#建议顺序)逐个实现，用 `make test`、`make check` 在本机自测，
+`make check` 误差足够小后再用 `python3 tools/submit.py submit --id 你的学号` 提交（见[提交](#提交)）。
 
 ## 学习目标
 
@@ -67,14 +66,7 @@ tensor       存储、形状、梯度、计算图节点 Node           （已给
 
 ## 你要写的文件
 
-只有这四个文件会被评测，其余文件评测时一律使用课程提供的版本：
-
-| 文件 | 内容 |
-| --- | --- |
-| `src/autograd.cpp` | `Tensor::backward()`：拓扑排序 + 反向遍历计算图 |
-| `src/ops.cpp` | 各算子的前向和 `Node::backward`（`add` 已给出作示例） |
-| `src/nn.cpp` | `Linear` / `Conv2d` / `MaxPool2d` / `LSTMCell` 的 `forward()` |
-| `src/optim.cpp` | `zero_grad`、`SGD`（momentum） |
+只有 `src/autograd.cpp`、`src/ops.cpp`、`src/nn.cpp`、`src/optim.cpp` 四个文件会被评测，其余文件评测时一律使用课程提供的版本。
 
 每处待实现的位置都是 `todo("...")`，调用时抛异常。各函数的形状和语义见 `include/tinydl/*.hpp` 和源文件里的注释。
 可以在这四个文件里加辅助函数、给 Node 子类加成员，但不要改头文件。
@@ -173,7 +165,7 @@ python3 tools/submit.py submit --id 你的学号 --nickname 昵称   # 提交，
 python3 tools/submit.py status --id 你的学号                   # 查看已用次数、排队位置和结果
 ```
 
-**每人共 3 次提交机会**，请对自己提交的代码负责：在本机把 `make test`、`make check` 调好再提交。
+**每人共 3 次提交机会**，在本机把 `make test`、`make check` 调好再提交。
 `submit` 上传前会：
 
 1. 在本机编译并运行公开种子的一致性检查（和 `make check` 相同），显示结果；本机编译失败就不上传；
@@ -224,7 +216,7 @@ python3 tools/submit.py status --id 你的学号                   # 查看已�
 不确定刚才是否已上传成功时，先用 `status` 查看；直接再提交同样的代码也不会重复计次。
 
 **提交后多久出结果？**
-一般一分钟以内。`submit` 会显示排队位置和预计时间，用 `status` 查询结果。截止前提交的人多，请尽早提交，不要等到最后一天。
+一般一分钟以内。`submit` 会显示排队位置和预计时间，用 `status` 查询结果。临近截止排队的人多，请尽早提交。
 
 **遇到其他问题。**
 向课程助教提供提交编号、`status` 的输出和简要复现步骤；不要在公开场合贴出自己的完整代码。
