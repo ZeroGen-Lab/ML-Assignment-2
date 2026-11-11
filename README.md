@@ -75,23 +75,29 @@ tensor       存储、形状、梯度、计算图节点 Node           （已给
 
 结构定义在 `models/nets.hpp`，训练程序在 `models/train_*.cpp`。
 
-| 模型 | 数据集 | 结构 | 训练设置 |
-| --- | --- | --- | --- |
-| MLP | Fashion-MNIST | Linear(784→256) → ReLU → Linear(256→128) → ReLU → Linear(128→10) | 3 epoch，batch 64，lr 0.05，momentum 0.9 |
-| CNN | CIFAR-10 | Conv(3→16, 3×3) → ReLU → MaxPool → Conv(16→32, 3×3) → ReLU → MaxPool → Linear(2048→128) → ReLU → Linear(128→10) | 训练集前 20000 张，2 epoch，batch 32，lr 0.01，momentum 0.9 |
-| LSTM | UCI HAR | LSTMCell(9→64) 展开 128 步，最后的隐藏状态 → Linear(64→6) | 4 epoch，batch 32，lr 0.1，momentum 0.9，梯度裁剪到范数 5 |
+| 模型 | 结构 | 评分时（一致性检查，见[评分](#评分)） |
+| --- | --- | --- |
+| MLP | Linear(784→256) → ReLU → Linear(256→128) → ReLU → Linear(128→10) | 每步 32 个样本，每个 784 个数（28×28）；lr 0.05，momentum 0.9 |
+| CNN | Conv(3→16, 3×3, padding 1) → ReLU → MaxPool(2×2) → Conv(16→32, 3×3, padding 1) → ReLU → MaxPool(2×2) → Linear(2048→128) → ReLU → Linear(128→10) | 每步 8 个样本，每个 3×32×32；lr 0.01，momentum 0.9 |
+| LSTM | LSTMCell(9→64) 沿时间展开，最后的隐藏状态 → Linear(64→6) | 每步 32 个样本，每个 16 个时间步、每步 9 个数；lr 0.1，momentum 0.9，梯度裁剪到范数 5 |
+
+评分时的输入是用固定随机种子生成的，不需要数据集。lr、momentum 和梯度裁剪在评分和下面的真实训练中相同。
+
+**可选：用真实数据训练（不计分）。** 写完以后想看看自己的框架能不能真的把模型训练出来，可以准备数据（见[数据](#数据)）后运行训练程序：
+
+| 模型 | 数据集 | 训练设置 |
+| --- | --- | --- |
+| MLP | Fashion-MNIST | 3 epoch，batch 64 |
+| CNN | CIFAR-10（只用训练集前 20000 张） | 2 epoch，batch 32 |
+| LSTM | UCI HAR（每个样本 128 个时间步） | 4 epoch，batch 32 |
+
+epoch 是把整个训练集完整过一遍的次数；batch 是每一步参数更新用的样本数。
 
 ## 数据
 
-**做作业和评分都不需要下载数据集。** 一致性检查的输入是用固定随机种子生成的，形状如下：
+**做作业和评分都不需要下载数据集。** 下面只是给想用真实数据训练的同学。
 
-| 模型 | 一次检查的输入 | 输出类别 |
-| --- | --- | --- |
-| MLP | 32 个样本，每个 784 个数（28×28） | 10 |
-| CNN | 8 个样本，每个 3×32×32 | 10 |
-| LSTM | 32 个样本，每个 16 个时间步、每步 9 个数 | 6 |
-
-（可选）想用真实数据完整训练三个模型、看看准确率，可以从各数据集官方地址下载原始数据，
+从各数据集官方地址下载原始数据，
 放进一个目录（如 `raw/`）并按下面的名字命名，再转换成 `data/`：
 
 - Fashion-MNIST 四个文件 `train-images-idx3-ubyte.gz` 等，改名为 `fashion-train-images-idx3-ubyte.gz`、`fashion-train-labels-idx1-ubyte.gz`、`fashion-t10k-images-idx3-ubyte.gz`、`fashion-t10k-labels-idx1-ubyte.gz`
@@ -161,7 +167,7 @@ make check      # 固定种子一致性检查（公开种子）
 
 - **怎么检查**：3 个模型（MLP、CNN、LSTM）各用 6 组固定随机种子。种子 1 公开，就是本机 `make check` 用的那一组，只供自查、**不计分**；
   评分只用另外 5 组，它们只在评测服务器上运行。
-  每组用种子生成网络初始权重和随机输入，连续做 5 步 forward / backward / SGD（momentum），每步一个 batch（大小见[数据](#数据)），
+  每组用种子生成网络初始权重和随机输入，连续做 5 步 forward / backward / SGD（momentum），每步一个 batch（大小见[三个模型](#三个模型)），
   和标准答案比较：每一步的 loss、第 1 步后每个参数的梯度、最后一步后的参数。
   标准答案是用 PyTorch float32 跑同样 5 步得到的。
 - **相对误差**：每个比较的数算 `|你的值 − 标准值| ÷ 尺度`，loss 的尺度是标准值的绝对值，梯度和参数的尺度是标准张量的均方根（避免接近 0 的元素把误差放大）。
