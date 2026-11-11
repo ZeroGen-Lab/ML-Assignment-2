@@ -1,7 +1,7 @@
 // Consistency check: with a fixed seed, build one of the three networks, feed it
 // random inputs and run a few steps of forward / backward / SGD. Prints a JSON
 // trace (losses, first-step gradients, final parameters) that
-// tools/check_consistency.py compares with the reference implementation.
+// tools/check_consistency.py compares with the reference values (PyTorch float32).
 // Provided by the course staff. Do NOT modify.
 //
 //   ./build/consistency mlp|cnn|lstm SEED
@@ -17,7 +17,9 @@ using namespace tdl;
 
 namespace {
 
-constexpr int kSteps = 5, kSamples = 8;
+// Samples per step: 32 for MLP and LSTM, 8 for CNN (with larger CNN batches, rounding
+// differences flip ReLU / max-pool decisions too often for a fair comparison).
+constexpr int kSteps = 5, kBatch = 32, kCnnBatch = 8, kSamples = 8;
 
 Tensor randn(Rng& rng, const std::vector<int>& shape) {
     std::vector<float> v(shape_numel(shape));
@@ -116,19 +118,19 @@ int main(int argc, char** argv) try {
     const uint64_t seed = std::stoull(argv[2]);
     if (model == "mlp")
         return run<MlpNet>("mlp", seed, [](MlpNet& n, Rng& r) {
-            Tensor x = randn(r, {8, 784});
-            return cross_entropy(n.forward(x), labels(r, 8, 10));
+            Tensor x = randn(r, {kBatch, 784});
+            return cross_entropy(n.forward(x), labels(r, kBatch, 10));
         });
     if (model == "cnn")
         return run<CnnNet>("cnn", seed, [](CnnNet& n, Rng& r) {
-            Tensor x = randn(r, {4, 3, 32, 32});
-            return cross_entropy(n.forward(x), labels(r, 4, 10));
+            Tensor x = randn(r, {kCnnBatch, 3, 32, 32});
+            return cross_entropy(n.forward(x), labels(r, kCnnBatch, 10));
         });
     if (model == "lstm")
         return run<LstmNet>("lstm", seed, [](LstmNet& n, Rng& r) {
             std::vector<Tensor> xs;
-            for (int t = 0; t < 16; ++t) xs.push_back(randn(r, {8, LstmNet::input}));
-            return cross_entropy(n.forward(xs), labels(r, 8, LstmNet::classes));
+            for (int t = 0; t < 16; ++t) xs.push_back(randn(r, {kBatch, LstmNet::input}));
+            return cross_entropy(n.forward(xs), labels(r, kBatch, LstmNet::classes));
         });
     std::fprintf(stderr, "unknown model %s\n", model.c_str());
     return 2;

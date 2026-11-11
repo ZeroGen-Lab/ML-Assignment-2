@@ -86,11 +86,14 @@ def show(item):
         print("  代码检查未通过：" + line)
     for target, text in (rep.get("compile_errors") or {}).items():
         print(f"  编译/链接失败 [{target}]:\n    " + text.strip().replace("\n", "\n    "))
-    e = rep.get("errors")
+    e, c = rep.get("errors"), rep.get("credit") or {}
+    if c:
+        print(f"  credit（隐藏种子，计分）：{c.get('total')} / 300")
     if e:
-        print(f"  结果（隐藏种子，计分）：{e['band']}，最大误差 {err(e['max'])}，误差中位数 {err(e['median'])}")
+        print(f"  三个模型合计：最大误差 {err(e['max'])}，误差中位数 {err(e['median'])}")
     for key, m in (rep.get("models") or {}).items():
-        print(f"  {key.upper():5}（隐藏种子）最大误差 {err(m.get('max'))}  中位数 {err(m.get('median'))}  {m.get('band')}")
+        print(f"  {key.upper():5}（隐藏种子）最大误差 {err(m.get('max'))}  中位数 {err(m.get('median'))}  {m.get('band')}"
+              + (f"  credit {c[key]}" if key in c else ""))
         for run in m.get("public") or []:
             print(f"    公开 seed {run['seed']}（不计分）: 最大误差 {err(run['max'])}  中位数 {err(run['median'])}"
                   + (f"  （{run['error']}）" if run.get("error") else ""))
@@ -180,8 +183,8 @@ def main():
             print(f"\n学号 {args.id}（榜单显示为 {st['public_id']} {st['nickname']}）")
             best = next((i for i in st["items"] if i.get("best")), None)
             if best:
-                print(f"目前榜单采用 #{best['id']}：{best['band']}，最大误差 {err(best['max_err'])}，"
-                      f"误差中位数 {err(best['median_err'])}（榜单取误差最小的一次，再交不会变差）")
+                print(f"目前榜单采用 #{best['id']}：credit {'—' if best.get('credit') is None else format(best['credit'], 'g')}，最大误差 {err(best['max_err'])}，"
+                      f"误差中位数 {err(best['median_err'])}（榜单取排名最好的一次，再交不会变差）")
             if used >= limit:
                 sys.exit(f"{limit} 次提交机会已经用完。")
         which = f"第 {used + 1} 次" + (f"（共 {limit} 次）" if limit else "（共 3 次）")

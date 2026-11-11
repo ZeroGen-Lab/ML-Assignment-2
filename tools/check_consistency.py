@@ -5,7 +5,7 @@
 
 For every (model, seed) in the expected file, runs `build/consistency MODEL SEED`
 (5 steps of forward / backward / SGD from a fixed initialisation and fixed random
-input) and compares its trace with the reference implementation's values:
+input) and compares its trace with the reference values (PyTorch float32 runs):
 the loss of every step, the gradients after the first backward() and the
 parameters after the last SGD step.
 
