@@ -1,5 +1,5 @@
-// The three networks and their optimiser settings, shared by the training
-// programs and the consistency check. Provided by the course staff. Do NOT modify.
+// The three networks and their optimiser settings, used by the consistency
+// check. Provided by the course staff. Do NOT modify.
 #pragma once
 
 #include <vector>
@@ -14,7 +14,7 @@ inline void collect(std::vector<Tensor>& out, Module& m) {
     for (const Tensor& p : m.parameters()) out.push_back(p);
 }
 
-// Fashion-MNIST: x [N, 1, 28, 28] or [N, 784] -> fc(784,256)-relu -> fc(256,128)-relu -> fc(128,10)
+// MLP: x [N, 1, 28, 28] or [N, 784] -> fc(784,256)-relu -> fc(256,128)-relu -> fc(128,10)
 struct MlpNet {
     static constexpr float lr = 0.05f, momentum = 0.9f, clip = 0.f;  // clip 0: no clipping
     Linear fc1, fc2, fc3;
@@ -33,7 +33,7 @@ struct MlpNet {
     std::vector<const char*> names() const { return {"fc1.W", "fc1.b", "fc2.W", "fc2.b", "fc3.W", "fc3.b"}; }
 };
 
-// CIFAR-10: x [N, 3, 32, 32]
+// CNN: x [N, 3, 32, 32]
 //   conv(3->16,3x3,p1)-relu-pool2 -> conv(16->32,3x3,p1)-relu-pool2 -> fc(2048,128)-relu -> fc(128,10)
 struct CnnNet {
     static constexpr float lr = 0.01f, momentum = 0.9f, clip = 0.f;
@@ -59,7 +59,7 @@ struct CnnNet {
     }
 };
 
-// UCI HAR: a sequence of T tensors [N, 9] -> LSTMCell(9, 64) unrolled over time,
+// LSTM: a sequence of T tensors [N, 9] -> LSTMCell(9, 64) unrolled over time,
 // last hidden state -> fc(64, 6). Gradients are clipped to norm 5 before each step.
 struct LstmNet {
     static constexpr float lr = 0.1f, momentum = 0.9f, clip = 5.f;

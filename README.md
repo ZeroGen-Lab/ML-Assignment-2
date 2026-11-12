@@ -2,9 +2,9 @@
 
 [排行榜](https://coideas.me/ml-assignment-2/) · [课程仓库](https://github.com/ZeroGen-Lab/ML-Assignment-2)
 
-本作业要求仅使用 C++17 标准库实现一个小型深度学习框架，并用它训练 MLP、CNN、LSTM 三个模型。
+本作业要求仅使用 C++17 标准库实现一个小型深度学习框架，并用它完成 MLP、CNN、LSTM 三个模型的前向传播、反向传播和参数更新。
 
-作业采用填空形式：张量、模型结构、数据加载和训练循环均已给出，需要实现的是框架的核心部分，即各算子的前向与反向传播、自动求导引擎、网络层和优化器。
+作业采用填空形式：张量和三个模型的结构均已给出，需要实现的是框架的核心部分，即各算子的前向与反向传播、自动求导引擎、网络层和优化器。
 三个模型的梯度（包括 LSTM 沿时间展开后的反向传播）均由所实现的自动求导引擎计算，不得为单个模型手写梯度。
 
 - **成绩占比**：课程总评的 35%。每组隐藏种子按误差定档，三个模型分别计 credit，详见[评分](#评分)。
@@ -37,7 +37,7 @@ Windows 上不使用 WSL 时，用 `python tools/build.py` 和 `python tools/bui
 ## 框架结构
 
 ```
-models/      MLP、CNN、LSTM 的结构和训练程序           （已给出）
+models/      MLP、CNN、LSTM 的模型结构                  （已给出）
   ↓ 调用
 nn / optim   Linear、Conv2d、MaxPool2d、LSTMCell、SGD  （需实现 src/nn.cpp、src/optim.cpp）
   ↓ 由算子组合
@@ -61,7 +61,7 @@ tensor       存储、形状、梯度、计算图节点 Node           （已给
 | Autograd | `Tensor::backward()`：拓扑排序后按逆序调用各节点的 `backward`；不得使用递归（测试包含 2 万层的深链，递归会导致栈溢出） | 需实现 | `src/autograd.cpp` |
 | 网络层 | `Linear`、`Conv2d`、`MaxPool2d`、`LSTMCell` 的 `forward()`，由上述算子组合而成 | 需实现 | `src/nn.cpp` |
 | 优化器 | `zero_grad`、带 momentum 的 `SGD`（`clip_grad_norm` 已给出） | 需实现 | `src/optim.cpp` |
-| 模型与训练 | 三个模型的结构、超参数和训练循环 | 已给出 | `models/` |
+| 模型 | 三个模型的结构和优化器设置 | 已给出 | `models/nets.hpp` |
 | 测试 | 梯度检查与单元测试、固定种子一致性检查 | 已给出 | `tests/`、`tools/check_consistency.py` |
 
 ## 需实现的文件
@@ -73,7 +73,7 @@ tensor       存储、形状、梯度、计算图节点 Node           （已给
 
 ## 三个模型
 
-模型结构定义在 `models/nets.hpp`，训练程序位于 `models/train_*.cpp`。
+模型结构定义在 `models/nets.hpp`。
 
 | 模型 | 结构 | 评分设置（一致性检查，见[评分](#评分)） |
 | --- | --- | --- |
@@ -81,50 +81,19 @@ tensor       存储、形状、梯度、计算图节点 Node           （已给
 | CNN | Conv(3→16, 3×3, padding 1) → ReLU → MaxPool(2×2) → Conv(16→32, 3×3, padding 1) → ReLU → MaxPool(2×2) → Linear(2048→128) → ReLU → Linear(128→10) | 每步 batch 8，每个样本 3×32×32；lr 0.01，momentum 0.9 |
 | LSTM | LSTMCell(9→64) 沿时间展开，取最后一步的隐藏状态 → Linear(64→6) | 每步 batch 32，每个样本 16 个时间步、每步 9 维；lr 0.1，momentum 0.9，梯度裁剪至范数 5 |
 
-评分所用的输入由固定随机种子生成，无需数据集。lr、momentum 和梯度裁剪的设置在评分与真实数据训练中相同。
-
-### 真实数据训练（可选，不计分）
-
-如需用真实数据验证框架的训练效果，可先准备数据（见[数据](#数据)），再运行训练程序：
-
-| 模型 | 数据集 | 训练设置 |
-| --- | --- | --- |
-| MLP | Fashion-MNIST | 3 epoch，batch 64 |
-| CNN | CIFAR-10（仅用训练集前 20000 张） | 2 epoch，batch 32 |
-| LSTM | UCI HAR（每个样本 128 个时间步） | 4 epoch，batch 32 |
-
-其中 epoch 指完整遍历一次训练集，batch 指每次参数更新所用的样本数。
-
-## 数据
-
-**完成作业和评分均无需下载数据集。** 本节仅适用于真实数据训练。
-
-从各数据集的官方地址下载原始文件，放入同一目录（如 `raw/`）并按以下名称命名，再转换为 `data/`：
-
-- Fashion-MNIST：四个文件 `train-images-idx3-ubyte.gz` 等，分别改名为 `fashion-train-images-idx3-ubyte.gz`、`fashion-train-labels-idx1-ubyte.gz`、`fashion-t10k-images-idx3-ubyte.gz`、`fashion-t10k-labels-idx1-ubyte.gz`
-- CIFAR-10：二进制版本 `cifar-10-binary.tar.gz`
-- UCI HAR：压缩包，改名为 `uci-har.zip`
-
-```
-python3 tools/prepare_data.py raw data
-```
-
-缺少某个数据集的文件时，转换脚本会跳过该数据集；只训练一个模型时，仅需准备对应的数据。`data/` 已列入 `.gitignore`，请勿提交。
+评分所用的输入由固定随机种子生成，无需数据集。
 
 ## 编译和自测
 
 环境要求：支持 C++17 的 `g++` 或 `clang++`、`make` 和 `python3`。Linux 和 macOS 可直接使用；Windows 可直接编译（不需要 `make`），也可使用 WSL，见[使用 Windows](#使用-windows)。
 
 ```
-make            # 生成 build/gradcheck、build/consistency 和三个训练程序
+make            # 生成 build/gradcheck 和 build/consistency
 make test       # 梯度检查和单元测试（公开部分）
 make check      # 固定种子一致性检查（公开种子）
 ./build/gradcheck ops          # 只运行一组：ops / autograd / nn / optim
 ./build/gradcheck matmul       # 只运行一项
 ./build/consistency mlp 1      # 输出一次一致性检查的原始结果（参数：mlp / cnn / lstm，种子）
-./build/train_mlp  --data data # 可选：用真实数据训练 MLP（需先准备 data/）
-./build/train_cnn  --data data # 可选：训练 CNN
-./build/train_lstm --data data # 可选：训练 LSTM
 ```
 
 没有 `make` 时（如 Windows），可用 `tools/build.py` 完成同样的操作：
@@ -137,10 +106,7 @@ python tools/build.py check        # 等同 make check
 python tools/build.py clean        # 删除 build/
 ```
 
-Windows 下直接运行程序的写法为 `build\consistency mlp 1`、`build\train_mlp --data data`。
-
-训练程序支持以下参数：`--epochs N`（训练轮数）、`--limit N`（仅使用前 N 个训练样本，便于快速调试）、`--seed N`（随机种子）。
-训练时每个 epoch 输出一行 loss，结束时输出一行 JSON，包含训练耗时、测试准确率和最终 loss。
+Windows 下直接运行程序的写法为 `build\consistency mlp 1`。
 
 ## 建议顺序
 
@@ -177,7 +143,7 @@ Windows 下直接运行程序的写法为 `build\consistency mlp 1`、`build\tra
 
 ## 评分
 
-仅依据固定种子一致性检查的**误差**评分，不考虑训练准确率和运行速度。每个模型的每组隐藏种子**逐组定档**，三个模型**分别计 credit**。
+仅依据固定种子一致性检查的**误差**评分，不考虑运行速度。每个模型的每组隐藏种子**逐组定档**，三个模型**分别计 credit**。
 
 - **检查方法**：每个模型使用 6 组固定随机种子。种子 1 公开，即本机 `make check` 所用的种子，仅供自查，**不计分**；其余 5 组仅在评测服务器上运行，用于评分。
   每组种子生成网络的初始权重和随机输入，连续执行 5 步 forward / backward / SGD（momentum），每步一个 batch（大小见[三个模型](#三个模型)），并与标准答案比较：每一步的 loss、第 1 步后各参数的梯度、最后一步后的各参数。

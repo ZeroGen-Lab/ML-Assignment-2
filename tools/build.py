@@ -26,14 +26,7 @@ ROOT = Path(__file__).resolve().parent.parent
 BUILD = Path("build")
 INC = ["-Iinclude", "-Imodels"]
 LIB = ["src/tensor.cpp", "src/autograd.cpp", "src/ops.cpp", "src/nn.cpp", "src/optim.cpp"]
-DATA = "models/data.cpp"
-PROGRAMS = {
-    "gradcheck": ("tests/gradcheck.cpp", False),
-    "consistency": ("tests/consistency.cpp", False),
-    "train_mlp": ("models/train_mlp.cpp", True),   # True: also links models/data.cpp
-    "train_cnn": ("models/train_cnn.cpp", True),
-    "train_lstm": ("models/train_lstm.cpp", True),
-}
+PROGRAMS = {"gradcheck": "tests/gradcheck.cpp", "consistency": "tests/consistency.cpp"}
 QUIET = False
 FORCE = False
 
@@ -73,7 +66,7 @@ def default_flags(cxx):
 
 
 def headers():
-    return sorted(str(p) for p in Path("include/tinydl").glob("*.hpp")) + ["models/data.hpp", "models/nets.hpp"]
+    return sorted(str(p) for p in Path("include/tinydl").glob("*.hpp")) + ["models/nets.hpp"]
 
 
 def stale(target, deps):
@@ -100,15 +93,14 @@ def obj_for(src):
 def build(names, cxx, flags):
     (BUILD / "obj").mkdir(parents=True, exist_ok=True)
     hdr = headers()
-    need_data = any(PROGRAMS[n][1] for n in names)
-    for src in LIB + ([DATA] if need_data else []):
+    for src in LIB:
         obj = obj_for(src)
         if stale(obj, [src] + hdr):
             run_compiler([cxx, *flags, *INC, "-c", src, "-o", str(obj)], f"编译 {src}")
     link = ["-static"] if WINDOWS else []
     for name in names:
-        main, with_data = PROGRAMS[name]
-        objs = [str(obj_for(s)) for s in LIB] + ([str(obj_for(DATA))] if with_data else [])
+        main = PROGRAMS[name]
+        objs = [str(obj_for(s)) for s in LIB]
         exe = BUILD / (name + EXE)
         if stale(exe, [main] + objs + hdr):
             run_compiler([cxx, *flags, *INC, main, *objs, *link, "-o", str(exe)], f"链接 {exe}")
