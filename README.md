@@ -196,8 +196,7 @@ make check      # 固定种子一致性检查（公开种子）
 在作业根目录下运行以下命令。提交时仅上传 `src/` 中的四个文件。
 
 ```
-python3 tools/submit.py submit --id 学号 --name 姓名                   # 提交
-python3 tools/submit.py submit --id 学号 --name 姓名 --nickname 昵称   # 提交，同时设置排行榜昵称
+python3 tools/submit.py submit --id 学号 --name 姓名 --nickname 昵称   # 提交（--nickname 可省略）
 python3 tools/submit.py status --id 学号                               # 查询已用次数、排队位置和评测结果
 ```
 
