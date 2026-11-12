@@ -23,6 +23,7 @@ the grading server. Leaderboard: https://coideas.me/ml-assignment-2/
 import argparse
 import http.client
 import json
+import os
 import subprocess
 import sys
 import urllib.error
@@ -114,17 +115,21 @@ def show(item):
 def local_check():
     """Build and run the public consistency check here; returns False if it cannot build."""
     print("本机检查：编译并运行公开种子的一致性检查（和 make check 相同）……")
+    # tools/build.py needs no make, so this also works on Windows; --force always rebuilds.
+    env = dict(os.environ, PYTHONIOENCODING="utf-8")
+    run = dict(capture_output=True, text=True, encoding="utf-8", errors="replace", env=env)
     try:
-        # -B: always rebuild; make 3.81 (macOS) keeps a build made in the same second as an edit.
-        p = subprocess.run(["make", "-s", "-B", "build/consistency"], capture_output=True, text=True, timeout=600)
+        p = subprocess.run([sys.executable, "-I", "tools/build.py", "--force", "--quiet", "consistency"],
+                           timeout=600, **run)
     except (OSError, subprocess.SubprocessError) as e:
-        print(f"无法运行 make（{type(e).__name__}）。可以加 --skip-local-check 跳过本机检查。")
+        print(f"无法运行本机编译（{type(e).__name__}）。可以加 --skip-local-check 跳过本机检查。")
         return False
     if p.returncode != 0:
         print("本机编译失败：\n    " + (p.stderr or p.stdout).strip()[-1500:].replace("\n", "\n    "))
         return False
-    p = subprocess.run([sys.executable, "-I", "tools/check_consistency.py", "build/consistency",
-                        "tests/consistency_expected.json"], capture_output=True, text=True)
+    exe = os.path.join("build", "consistency.exe" if os.name == "nt" else "consistency")
+    p = subprocess.run([sys.executable, "-I", "tools/check_consistency.py", exe,
+                        "tests/consistency_expected.json"], **run)
     lines = p.stdout.strip().splitlines()
     print("    " + "\n    ".join(lines[-4:]))
     if p.returncode != 0:

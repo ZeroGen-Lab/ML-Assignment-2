@@ -20,6 +20,7 @@ make            # 编译，确认编译环境可用
 make test       # 初始状态下仅示例 ops/add 通过（1/30），其余测试报 TODO not implemented
 ```
 
+Windows 上不使用 WSL 时，用 `python tools/build.py` 和 `python tools/build.py test` 代替 `make` 和 `make test`（见[使用 Windows](#使用-windows)）。
 未安装 Git 时，可在[课程仓库](https://github.com/ZeroGen-Lab/ML-Assignment-2)页面选择 **Code → Download ZIP** 下载并解压。
 以下所有命令均在作业根目录（包含 `src/` 的目录）下执行。
 
@@ -112,7 +113,7 @@ python3 tools/prepare_data.py raw data
 
 ## 编译和自测
 
-环境要求：支持 C++17 的 `g++` 或 `clang++`、`make` 和 `python3`。Linux 和 macOS 可直接使用；Windows 请使用 WSL。
+环境要求：支持 C++17 的 `g++` 或 `clang++`、`make` 和 `python3`。Linux 和 macOS 可直接使用；Windows 可直接编译（不需要 `make`），也可使用 WSL，见[使用 Windows](#使用-windows)。
 
 ```
 make            # 生成 build/gradcheck、build/consistency 和三个训练程序
@@ -125,6 +126,18 @@ make check      # 固定种子一致性检查（公开种子）
 ./build/train_cnn  --data data # 可选：训练 CNN
 ./build/train_lstm --data data # 可选：训练 LSTM
 ```
+
+没有 `make` 时（如 Windows），可用 `tools/build.py` 完成同样的操作：
+
+```
+python tools/build.py              # 等同 make
+python tools/build.py test         # 等同 make test
+python tools/build.py test ops     # 等同 ./build/gradcheck ops
+python tools/build.py check        # 等同 make check
+python tools/build.py clean        # 删除 build/
+```
+
+Windows 下直接运行程序的写法为 `build\consistency mlp 1`、`build\train_mlp --data data`。
 
 训练程序支持以下参数：`--epochs N`（训练轮数）、`--limit N`（仅使用前 N 个训练样本，便于快速调试）、`--seed N`（随机种子）。
 训练时每个 epoch 输出一行 loss，结束时输出一行 JSON，包含训练耗时、测试准确率和最终 loss。
@@ -237,11 +250,24 @@ python3 tools/submit.py status --id 学号                               # 查�
 
 ### `make` 提示不支持 `-march=native`
 
-部分编译器（如较旧版本的 Apple clang）不支持该选项，本机编译时可去掉：`make CXXFLAGS="-O3 -std=c++17 -Wall"`。评测服务器的编译选项不受影响。
+部分编译器（如较旧版本的 Apple clang）不支持该选项，本机编译时可去掉：`make CXXFLAGS="-O3 -std=c++17 -Wall"`。`tools/build.py` 会自动检测，无需处理。评测服务器的编译选项不受影响。
 
 ### 使用 Windows
 
-请在 WSL（Ubuntu）中完成作业：在 WSL 中安装 `g++`、`make`、`python3` 后，按上述命令操作。
+以下两种方式任选其一。
+
+**方式一：直接在 Windows 上编译（不需要 `make`）**
+
+1. 安装 [Python 3](https://www.python.org/downloads/)，安装时勾选 “Add python.exe to PATH”。
+2. 安装 MinGW-w64 版 `g++`（9 或更新版本）。推荐 [MSYS2](https://www.msys2.org/)：安装后打开 “MSYS2 UCRT64” 终端，运行 `pacman -S --needed mingw-w64-ucrt-x86_64-gcc`，再把 `C:\msys64\ucrt64\bin` 加入系统环境变量 PATH。已安装其他 MinGW-w64 `g++` 的同学可直接使用。不支持 Visual Studio 的 MSVC 编译器。
+3. 重新打开 PowerShell 或命令提示符，运行 `g++ --version` 和 `python --version` 确认均可用。
+4. 在作业目录下用 `python tools/build.py`、`python tools/build.py test`、`python tools/build.py check` 编译和自测；本文档中的 `python3` 均改为 `python`，例如 `python tools/submit.py submit --id 学号 --name 姓名`。
+
+**方式二：使用 WSL（Ubuntu）**
+
+与评测服务器的环境一致。以管理员身份打开 PowerShell，运行 `wsl --install` 并重启；打开 Ubuntu 后运行 `sudo apt update && sudo apt install -y g++ make python3 git`，之后按上述命令操作。建议将作业放在 WSL 的主目录（`~`）下，不要放在 `/mnt/c` 下，否则编译较慢。
+
+两种方式的本机结果与服务器可能有微小差异，均以服务器评测为准。
 
 ### 本机 `make check` 误差很小，服务器上的误差较大
 
