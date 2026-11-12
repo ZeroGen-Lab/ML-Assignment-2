@@ -90,7 +90,7 @@ def show(item):
     if c:
         print(f"  credit（隐藏种子，计分）：{c.get('total'):g} / 60")
     if e:
-        print(f"  三个模型合计：最大误差 {err(e['max'])}，误差中位数 {err(e['median'])}")
+        print(f"  全部隐藏种子：最大误差 {err(e['max'])}，误差中位数 {err(e['median'])}")
     for key, m in (rep.get("models") or {}).items():
         n = m.get("counts")
         print(f"  {key.upper():5}（隐藏种子）" + (f"credit {c[key]:g}：" if key in c else "")
