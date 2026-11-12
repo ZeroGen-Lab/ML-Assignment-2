@@ -23,7 +23,7 @@ make test       # 初始状态下仅示例 ops/add 通过（1/30），其余测�
 未安装 Git 时，可在[课程仓库](https://github.com/ZeroGen-Lab/ML-Assignment-2)页面选择 **Code → Download ZIP** 下载并解压。
 以下所有命令均在作业根目录（包含 `src/` 的目录）下执行。
 
-请按[建议顺序](#建议顺序)逐项实现，并用 `make test`、`make check` 在本机自测；自测通过后，使用 `python3 tools/submit.py submit --id 学号` 提交（见[提交](#提交)）。
+请按[建议顺序](#建议顺序)逐项实现，并用 `make test`、`make check` 在本机自测；自测通过后，使用 `python3 tools/submit.py submit --id 学号 --name 姓名` 提交（见[提交](#提交)）。
 
 ## 学习目标
 
@@ -196,15 +196,17 @@ make check      # 固定种子一致性检查（公开种子）
 在作业根目录下运行以下命令。提交时仅上传 `src/` 中的四个文件。
 
 ```
-python3 tools/submit.py submit --id 学号                   # 提交
-python3 tools/submit.py submit --id 学号 --nickname 昵称   # 提交，同时设置排行榜昵称
-python3 tools/submit.py status --id 学号                   # 查询已用次数、排队位置和评测结果
+python3 tools/submit.py submit --id 学号 --name 姓名                   # 提交
+python3 tools/submit.py submit --id 学号 --name 姓名 --nickname 昵称   # 提交，同时设置排行榜昵称
+python3 tools/submit.py status --id 学号                               # 查询已用次数、排队位置和评测结果
 ```
+
+提交时须用 `--name` 填写本人姓名，姓名仅用于登记成绩，不在排行榜显示。
 
 **每人共 3 次提交机会**，请在本机通过 `make test` 和 `make check` 后再提交。`submit` 在上传前依次执行：
 
 1. 在本机编译并运行公开种子的一致性检查（与 `make check` 相同）并显示结果；本机编译失败时不上传。
-2. 显示学号和本次将使用的提交次数，输入 `yes` 后才上传。
+2. 显示学号、姓名和本次将使用的提交次数，输入 `yes` 后才上传。
 3. 学号首次登记时，要求再次输入学号确认。成绩按学号记录，登记后不可自行修改，请务必核对。
    如发现学号填写错误，请立即联系助教，并修改保存了错误学号的脚本、命令历史或环境变量。
 
@@ -216,7 +218,7 @@ python3 tools/submit.py status --id 学号                   # 查询已用次�
 - 评测系统故障；
 - 截止后、次数用尽后或因网络问题未显示“已受理”的上传。
 
-排行榜仅显示系统分配的编号（如 `S0001`）和昵称，不显示学号。昵称默认为“匿名同学”，最多 20 个字符，每次提交时均可修改。
+排行榜显示学号和昵称，不显示姓名。昵称默认为“匿名同学”，最多 20 个字符，每次提交时均可修改。
 排行榜中昵称为“参考实现”的条目是课程参考答案的评测结果，仅供对照，不参与成绩评定。
 `status` 显示每次提交的结果和诊断信息（见[测试与反馈](#测试与反馈)）。
 

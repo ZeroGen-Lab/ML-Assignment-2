@@ -3,9 +3,9 @@
 
 Run from the assignment directory (the one with src/):
 
-    python3 tools/submit.py submit --id 你的学号      # upload src/{autograd,ops,nn,optim}.cpp
-    python3 tools/submit.py status --id 你的学号      # queue position and results
-    python3 tools/submit.py submit --id 你的学号 --nickname 昵称   # also set the leaderboard name
+    python3 tools/submit.py submit --id 你的学号 --name 你的姓名   # upload src/{autograd,ops,nn,optim}.cpp
+    python3 tools/submit.py status --id 你的学号                   # queue position and results
+    python3 tools/submit.py submit --id 你的学号 --name 你的姓名 --nickname 昵称   # also set the leaderboard name
 
 Each student has 3 submissions for the whole assignment. Before uploading, submit
 builds and runs the public consistency check here (like `make check`), shows the
@@ -14,8 +14,8 @@ or does not compile/link on the server, a resubmission of identical code (e.g.
 after a lost reply), a queued submission replaced by a newer one, system errors,
 and anything refused before it was accepted.
 
-The first accepted submission registers the student id; the leaderboard shows only
-the assigned number (S0001, ...) and the nickname, never the student id.
+The first accepted submission registers the student id. The leaderboard shows the
+student id and the nickname; the name is kept for the grade list and never shown.
 
 Only the four files above are uploaded; everything else is the teacher's copy on
 the grading server. Leaderboard: https://coideas.me/ml-assignment-2/
@@ -36,6 +36,7 @@ STATUS = {"queued": "排队中", "running": "评测中", "done": "已评测", "e
           "superseded": "已被新提交替换（不计次数）"}
 HTTP_TEXT = {413: "提交内容过大（每个文件最多 512 KB）", 429: "请求太频繁，请过一分钟再试"}
 MAX_FILE_BYTES = 512 * 1024
+NAME_MAX = 32
 
 
 class NotFound(Exception):
@@ -144,6 +145,7 @@ def main():
     ap.add_argument("command", choices=["submit", "status"])
     ap.add_argument("--id", required=True, help="学号")
     ap.add_argument("--src", default="src", help="源码目录（默认 src）")
+    ap.add_argument("--name", help="姓名（提交时必填，仅用于登记成绩，不在排行榜显示）")
     ap.add_argument("--nickname", help="排行榜上显示的昵称（最多 20 字，可随提交修改；默认“匿名同学”）")
     ap.add_argument("-n", type=int, default=3, help="status 显示最近几次提交（默认 3）")
     ap.add_argument("--yes", action="store_true", help="不再询问确认（学号和次数仍会显示）")
@@ -154,6 +156,10 @@ def main():
     args.id = args.id.strip()
 
     if args.command == "submit":
+        args.name = (args.name or "").strip()
+        if not 0 < len(args.name) <= NAME_MAX:
+            sys.exit(f"提交时请用 --name 填写姓名（不超过 {NAME_MAX} 个字），例如：\n"
+                     "  python3 tools/submit.py submit --id 学号 --name 姓名")
         src = Path(args.src)
         missing = [f for f in FILES if not (src / f).is_file()]
         if missing:
@@ -177,13 +183,13 @@ def main():
                 sys.exit(f"失败：{e}")
             st = None
         if st is None:
-            print(f"\n学号 {args.id} 还没有登记，这次提交会用它登记，成绩记在这个学号下，之后不能自己修改。")
+            print(f"\n学号 {args.id}（姓名 {args.name}）还没有登记，这次提交会用它登记，成绩记在这个学号下，之后不能自己修改。")
             if not args.yes and not confirm("请再输入一遍学号确认：", args.id):
                 sys.exit("学号不一致，未上传。")
             used, limit = 0, None
         else:
             used, limit = st["used"], st["limit"]
-            print(f"\n学号 {args.id}（榜单显示为 {st['public_id']} {st['nickname']}）")
+            print(f"\n学号 {args.id}，姓名 {args.name}（排行榜显示学号和昵称“{st['nickname']}”，不显示姓名）")
             best = next((i for i in st["items"] if i.get("best")), None)
             if best:
                 print(f"目前榜单采用 #{best['id']}：credit {'—' if best.get('credit') is None else format(best['credit'], 'g')}，最大误差 {err(best['max_err'])}，"
@@ -195,7 +201,7 @@ def main():
         if not args.yes and not confirm("确认提交请输入 yes：", "yes"):
             sys.exit("已取消，没有上传。")
 
-        data = {"student_id": args.id, "files": files}
+        data = {"student_id": args.id, "name": args.name, "files": files}
         if args.nickname is not None:
             data["nickname"] = args.nickname
         r = call(base, "api/submit", data)
@@ -205,7 +211,7 @@ def main():
             return
         print(f"已受理：提交编号 #{r['submission_id']}，时间 {r['received_at']}")
         hint = "；改昵称：提交时加 --nickname 昵称" if r.get("nickname_editable") else ""
-        print(f"排行榜上显示为 {r['public_id']} {r['nickname']}（不显示学号{hint}）")
+        print(f"排行榜上显示为 {args.id} {r['nickname']}（不显示姓名{hint}）")
         if r["replaced"]:
             print("已替换排队中的上一份提交 " + "、".join(f"#{i}" for i in r["replaced"]) + "（被替换的不计次数）")
         print(f"已用 {r['used']}/{r['limit']} 次（如果服务器上代码检查或编译失败，这次会退回）；"
@@ -214,7 +220,7 @@ def main():
         return
 
     r = call(base, "api/status?" + urllib.parse.urlencode({"student_id": args.id}))
-    print(f"{r['public_id']} {r['nickname']}  已用 {r['used']}/{r['limit']} 次提交机会；"
+    print(f"{args.id} {r['nickname']}  已用 {r['used']}/{r['limit']} 次提交机会；"
           f"队列：评测中 {r['queue']['running']}，排队 {r['queue']['queued']}")
     if not r["items"]:
         print("还没有提交记录。")
