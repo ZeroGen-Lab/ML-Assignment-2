@@ -24,7 +24,7 @@ Windows 上不使用 WSL 时，用 `python tools/build.py` 和 `python tools/bui
 未安装 Git 时，可在[课程仓库](https://github.com/ZeroGen-Lab/ML-Assignment-2)页面选择 **Code → Download ZIP** 下载并解压。
 以下所有命令均在作业根目录（包含 `src/` 的目录）下执行。
 
-请按[建议顺序](#建议顺序)逐项实现，并用 `make test`、`make check` 在本机自测；自测通过后，使用 `python3 tools/submit.py submit --id 学号 --name 姓名` 提交（见[提交](#提交)）。
+实现四个源文件中标出的待完成部分，并用 `make test`、`make check` 在本机自测；自测通过后，使用 `python3 tools/submit.py submit --id 学号 --name 姓名` 提交（见[提交](#提交)）。
 
 ## 学习目标
 
@@ -107,16 +107,6 @@ python tools/build.py clean        # 删除 build/
 ```
 
 Windows 下直接运行程序的写法为 `build\consistency mlp 1`。
-
-## 建议顺序
-
-1. `mul`、`relu`、`sigmoid`、`tanh`：逐个通过 `./build/gradcheck ops`。
-2. `Tensor::backward()`：通过 `./build/gradcheck autograd`。
-3. `matmul`、`add_bias`、`reshape`、`cross_entropy`，`Linear::forward`，`zero_grad`、`SGD` → `make check` 中 MLP 达到“计算准确”。
-4. `conv2d`、`max_pool2d`，`Conv2d::forward`、`MaxPool2d::forward` → CNN 达到“计算准确”。
-5. `slice_cols`、`LSTMCell::forward` → LSTM 达到“计算准确”。
-
-每一步应先通过对应的梯度检查，再进行一致性检查。三个模型分别计 credit，按上述顺序每完成一个模型，即可获得该模型的 credit。
 
 ## 测试与反馈
 
