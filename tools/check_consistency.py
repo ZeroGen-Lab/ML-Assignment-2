@@ -21,6 +21,7 @@ Results are the maximum and the median of these errors:
     有错误    max >  1e-3
     未完成    a run gave no usable output
 
+Each model is banded separately and earns credit by its band (see README 评分).
 Grading uses only the unpublished seeds on the server; the public seeds here
 are for checking your own work and do not count.
 """

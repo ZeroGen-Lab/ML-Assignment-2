@@ -125,7 +125,8 @@ def local_check():
     lines = p.stdout.strip().splitlines()
     print("    " + "\n    ".join(lines[-4:]))
     if p.returncode != 0:
-        print("注意：本机公开种子的结果是“有错误”或“未完成”，这样提交也会用掉一次机会，建议先改好。")
+        print("注意：本机公开种子上有模型的结果为“有错误”或“未完成”（见上方各模型结果）。"
+              "三个模型分别计 credit，提交将使用一次机会，建议修改后再提交。")
     return True
 
 
