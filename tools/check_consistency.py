@@ -9,9 +9,7 @@ input) and compares its trace with the reference values (PyTorch float32 runs):
 the loss of every step, the gradients after the first backward() and the
 parameters after the last SGD step.
 
-Every compared number gets a relative error |yours - ref| / scale, where scale
-is |ref| for a loss and the root-mean-square of the reference tensor for a
-gradient or parameter (so values near zero are not blown up). A run that crashes,
+Every compared number gets an absolute error |yours - ref|. A run that crashes,
 times out or prints the wrong shapes counts as an infinite error.
 
 Results are the maximum and the median of these errors:
@@ -42,32 +40,31 @@ def _number(x):
     return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)
 
 
-def _rel(g, r, scale):
-    return abs(g - r) / scale if _number(g) else math.inf
+def _err(g, r):
+    return abs(g - r) if _number(g) else math.inf
 
 
 def _tensor_errors(got, ref, what):
     errors = []
     for name, r in ref.items():
         g = (got or {}).get(name) if isinstance(got, dict) else None
-        rms = r["norm"] / math.sqrt(max(1, r["n"])) or 1e-30
         labels = [f"{what} {name}（范数）"] + [f"{what} {name}（第 {k + 1} 个抽样元素）" for k in range(len(r["at"]))]
         if not (isinstance(g, dict) and g.get("n") == r["n"] and isinstance(g.get("at"), list)
                 and len(g["at"]) == len(r["at"])):
             errors += [(label, math.inf) for label in labels]
             continue
-        values = [_rel(g.get("norm"), r["norm"], max(abs(r["norm"]), 1e-30))]
-        values += [_rel(x, y, rms) for x, y in zip(g["at"], r["at"])]
+        values = [_err(g.get("norm"), r["norm"])]
+        values += [_err(x, y) for x, y in zip(g["at"], r["at"])]
         errors += list(zip(labels, values))
     return errors
 
 
 def labeled_errors(got, ref):
-    """(what was compared, relative error) for every compared number of one run."""
+    """(what was compared, absolute error) for every compared number of one run."""
     steps = len(ref["loss"])
     loss = got.get("loss") if isinstance(got, dict) and isinstance(got.get("loss"), list) else []
     loss = loss[:steps] + [None] * (steps - len(loss))
-    out = [(f"第 {i + 1} 步的 loss", _rel(g, r, max(abs(r), 1e-30)))
+    out = [(f"第 {i + 1} 步的 loss", _err(g, r))
            for i, (g, r) in enumerate(zip(loss, ref["loss"]))]
     out += _tensor_errors(got.get("grad") if isinstance(got, dict) else None, ref["grad"], "第 1 步后的梯度")
     out += _tensor_errors(got.get("param") if isinstance(got, dict) else None, ref["param"], f"第 {steps} 步后的参数")
@@ -75,7 +72,7 @@ def labeled_errors(got, ref):
 
 
 def errors(got, ref):
-    """Relative error of every compared number of one run (inf where unusable)."""
+    """Absolute error of every compared number of one run (inf where unusable)."""
     return [e for _, e in labeled_errors(got, ref)]
 
 
@@ -133,7 +130,7 @@ def main():
               + (f"  （{err}）" if err else ""))
         if got is not None and s["band"] != BANDS[0]:
             where, worst = max(labeled, key=lambda item: item[1])
-            print(f"    误差最大的一项：{where}，相对误差 {fmt(worst if math.isfinite(worst) else None)}")
+            print(f"    误差最大的一项：{where}，绝对误差 {fmt(worst if math.isfinite(worst) else None)}")
     for model, errs in per_model.items():
         s = summarize(errs)
         print(f"{model.upper():5} 最大误差 {fmt(s['max'])}  中位数 {fmt(s['median'])}  {s['band']}")
