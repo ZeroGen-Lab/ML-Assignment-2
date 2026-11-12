@@ -88,7 +88,7 @@ def show(item):
         print(f"  编译/链接失败 [{target}]:\n    " + text.strip().replace("\n", "\n    "))
     e, c = rep.get("errors"), rep.get("credit") or {}
     if c:
-        print(f"  credit（隐藏种子，计分）：{c.get('total'):g} / 300")
+        print(f"  credit（隐藏种子，计分）：{c.get('total'):g} / 60")
     if e:
         print(f"  三个模型合计：最大误差 {err(e['max'])}，误差中位数 {err(e['median'])}")
     for key, m in (rep.get("models") or {}).items():
@@ -127,7 +127,7 @@ def local_check():
     lines = p.stdout.strip().splitlines()
     print("    " + "\n    ".join(lines[-4:]))
     if p.returncode != 0:
-        print("注意：本机公开种子上有模型的结果为“有错误”或“未完成”（见上方各模型结果）。"
+        print("注意：本机公开种子上有模型的结果为“较高误差”或“计算错误”（见上方各模型结果）。"
               "三个模型分别计 credit，提交将使用一次机会，建议修改后再提交。")
     return True
 

@@ -16,13 +16,13 @@ times out or prints the wrong shapes counts as an infinite error.
 
 Results are the maximum and the median of these errors:
 
-    完全正确  median <= 1e-6 and max <= 1e-5
-    大体正确  max <= 1e-3 (correct, but precision is lost somewhere)
-    有错误    max >  1e-3
-    未完成    a run gave no usable output
+    计算准确    median <= 1e-6 and max <= 1e-5
+    低误差      max <= 1e-3 (correct, but precision is lost somewhere)
+    较高误差    max >  1e-3
+    计算错误    a run gave no usable output
 
-On the server every hidden seed of a model is banded on its own; a model's credit is
-100 x the mean weight of its seeds' bands (see README 评分).
+On the server every hidden seed of a model is banded on its own and scores 4 / 3 / 2 / 1
+by band; a model's credit is the sum over its seeds (see README 评分).
 Grading uses only the unpublished seeds on the server; the public seeds here
 are for checking your own work and do not count.
 """
@@ -35,7 +35,7 @@ import sys
 
 TIMEOUT = 5  # seconds per run, same as the grading server
 EXACT_MEDIAN, EXACT_MAX, ROUGH_MAX = 1e-6, 1e-5, 1e-3
-BANDS = ("完全正确", "大体正确", "有错误", "未完成")
+BANDS = ("计算准确", "低误差", "较高误差", "计算错误")
 
 
 def _number(x):
