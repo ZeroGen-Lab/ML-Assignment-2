@@ -88,12 +88,14 @@ def show(item):
         print(f"  编译/链接失败 [{target}]:\n    " + text.strip().replace("\n", "\n    "))
     e, c = rep.get("errors"), rep.get("credit") or {}
     if c:
-        print(f"  credit（隐藏种子，计分）：{c.get('total')} / 300")
+        print(f"  credit（隐藏种子，计分）：{c.get('total'):g} / 300")
     if e:
         print(f"  三个模型合计：最大误差 {err(e['max'])}，误差中位数 {err(e['median'])}")
     for key, m in (rep.get("models") or {}).items():
-        print(f"  {key.upper():5}（隐藏种子）最大误差 {err(m.get('max'))}  中位数 {err(m.get('median'))}  {m.get('band')}"
-              + (f"  credit {c[key]}" if key in c else ""))
+        n = m.get("counts")
+        print(f"  {key.upper():5}（隐藏种子）" + (f"credit {c[key]:g}：" if key in c else "")
+              + ("，".join(f"{band} {k}" for band, k in n.items()) + " 组；" if n else "")
+              + f"最大误差 {err(m.get('max'))}，中位数 {err(m.get('median'))}")
         for run in m.get("public") or []:
             print(f"    公开 seed {run['seed']}（不计分）: 最大误差 {err(run['max'])}  中位数 {err(run['median'])}"
                   + (f"  （{run['error']}）" if run.get("error") else ""))
